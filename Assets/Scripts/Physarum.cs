@@ -11,6 +11,7 @@ public class Physarum : MonoBehaviour
     [Header("Trail Agents Settings")]
     [Range(64, 1000000)]
     public int agentsCount = 64;
+    public ReadSensor rs;
 
     private ComputeBuffer agentsBuffer;
 
@@ -134,6 +135,7 @@ public class Physarum : MonoBehaviour
     // ------------------------------
     private void Update()
     {
+        trailDecayFactor = rs.lightSensorVal;
         if(Time.frameCount % stepMod == 0)
         {
             for (int i = 0; i < stepsPerFrame; i++)

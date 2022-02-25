@@ -214,7 +214,7 @@ float2 SensorTurn(uint3 id, Agent a)
                 bestSensor = j;
             }
         }
-        //debugTex[sensors[j]] = red;
+        //debugTex[sensors[j]] = blue;
     }
     
     //debugTex[sensors[bestSensor]] = green;
@@ -284,8 +284,9 @@ void DiffuseTextureKernel(uint3 id : SV_DispatchThreadID)
     }
     
     avg /= count;
-    
-    oc = avg * trailDecayFactor;
+
+
+    oc = float4(avg * trailDecayFactor, 0, 0, 1);
     oc = clamp(oc, 0, 1);
     
     if((hitXY.x != 0 && hitXY.y != 0) && distance(hitXY, id.xy) < brushSize) {
@@ -304,7 +305,7 @@ void RenderKernel(uint3 id : SV_DispatchThreadID)
 {
     
     if((hitXY.x != 0 && hitXY.y != 0) && distance(hitXY, id.xy) < brushSize) {
-        outTex[id.xy] = float4(1, 0, 0, 1);
+        outTex[id.xy] = float4(0, 1, 0, 1);
     } else {
         outTex[id.xy] = readTex[id.xy];
     }

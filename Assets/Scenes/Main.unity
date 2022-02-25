@@ -380,6 +380,7 @@ GameObject:
   - component: {fileID: 1400947905}
   - component: {fileID: 1400947908}
   - component: {fileID: 1400947904}
+  - component: {fileID: 1400947909}
   m_Layer: 0
   m_Name: Physarum
   m_TagString: Untagged
@@ -400,6 +401,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   agentsCount: 1000000
+  rs: {fileID: 1400947909}
   trailDecayFactor: 0.272
   diffusionRange: 1
   sensorCount: 3
@@ -494,3 +496,16 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1400947909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1400947903}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf95609f422df6e47b5917dd363d900a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lightSensorVal: 0
