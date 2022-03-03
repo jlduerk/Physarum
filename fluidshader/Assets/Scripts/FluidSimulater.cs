@@ -69,17 +69,17 @@ public class FluidSimulater
     private GetMousePositionCallBack mousePosOverrider;               // If this is NULL it is assumed the calculation is happening in screen space and the screen space pos is used for input position
 
     // The handles for different kernels
-    private int _handle_add_dye;
-    private int _handle_pressure_st2tx;
-    private int _handle_velocity_st2tx;
-    private int _handle_dye_st2tx;
-    private int _handle_Jacobi_Solve;
-    private int _handle_Copy_StructuredBuffer;
-    private int _handle_Clear_StructuredBuffer;
-    private int _handle_addForceWithMouse;
-    private int _handle_advection;
-    private int _handle_divergence;
-    private int _handle_calculate_divergence_free;
+    private int handle_dye;
+    private int handle_pressure_st2tx;
+    private int handle_velocity_st2tx;
+    private int handle_dye_st2tx;
+    private int handle_Jacobi;
+    private int handle_copyBuffer; //structured buffer
+    private int handle_clearBuffer; //also structured
+    private int handle_addForce; //with mouse
+    private int handle_advection;
+    private int handle_divergence;
+    private int handle_calculateDivergence;
 
     // Info used for input through mouse 
     private Vector2 mousePreviousPos;
@@ -159,17 +159,17 @@ public class FluidSimulater
         // -----------------------
         // Setting kernel handles
 
-        _handle_add_dye = ComputeShaderUtility.GetKernelHandle(UserInputShader, "AddDye");
-        _handle_pressure_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "PressureStructeredToTextureBillinearR32");
-        _handle_velocity_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "VelocityStructeredToTextureBillinearRG32");
-        _handle_dye_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "DyeStructeredToTextureBillinearRGB8");
-        _handle_Copy_StructuredBuffer = ComputeShaderUtility.GetKernelHandle(StructuredBufferUtilityShader, "Copy_StructuredBuffer");
-        _handle_Jacobi_Solve = ComputeShaderUtility.GetKernelHandle(SolverShader, "Jacobi_Solve");
-        _handle_Clear_StructuredBuffer = ComputeShaderUtility.GetKernelHandle(StructuredBufferUtilityShader, "Clear_StructuredBuffer");
-        _handle_addForceWithMouse = ComputeShaderUtility.GetKernelHandle(UserInputShader, "AddForce_mouse");
-        _handle_advection = ComputeShaderUtility.GetKernelHandle(StokeNavierShader, "advection");
-        _handle_divergence = ComputeShaderUtility.GetKernelHandle(StokeNavierShader, "divergence");
-        _handle_calculate_divergence_free = ComputeShaderUtility.GetKernelHandle(StokeNavierShader, "calculate_divergence_free");
+        handle_dye = ComputeShaderUtility.GetKernelHandle(UserInputShader, "AddDye");
+        handle_pressure_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "PressureStructeredToTextureBillinearR32");
+        handle_velocity_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "VelocityStructeredToTextureBillinearRG32");
+        handle_dye_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "DyeStructeredToTextureBillinearRGB8");
+        handle_copyBuffer = ComputeShaderUtility.GetKernelHandle(StructuredBufferUtilityShader, "Copy_StructuredBuffer");
+        handle_Jacobi = ComputeShaderUtility.GetKernelHandle(SolverShader, "Jacobi_Solve");
+        handle_clearBuffer = ComputeShaderUtility.GetKernelHandle(StructuredBufferUtilityShader, "Clear_StructuredBuffer");
+        handle_addForce = ComputeShaderUtility.GetKernelHandle(UserInputShader, "AddForce_mouse");
+        handle_advection = ComputeShaderUtility.GetKernelHandle(StokeNavierShader, "advection");
+        handle_divergence = ComputeShaderUtility.GetKernelHandle(StokeNavierShader, "divergence");
+        handle_calculateDivergence = ComputeShaderUtility.GetKernelHandle(StokeNavierShader, "calculate_divergence_free");
 
 
 
@@ -184,7 +184,7 @@ public class FluidSimulater
         StructuredBufferToTextureShader.SetInt("_Pressure_Results_Resolution", (int)canvas_dimension);
         StructuredBufferToTextureShader.SetInt("_Velocity_Results_Resolution", (int)canvas_dimension);
         StructuredBufferToTextureShader.SetInt("_Dye_Results_Resolution", (int)canvas_dimension);
-        StructuredBufferToTextureShader.SetTexture(_handle_pressure_st2tx, "_Results", visualizationTexture);
+        StructuredBufferToTextureShader.SetTexture(handle_pressure_st2tx, "_Results", visualizationTexture);
 
         // -----------------------
 
@@ -224,7 +224,7 @@ public class FluidSimulater
     {
         if (!IsValid()) return;
         SetBufferOnCommandList(sim_command_buffer, force_buffer, "_user_applied_force_buffer");
-        DispatchComputeOnCommandBuffer(sim_command_buffer, UserInputShader, _handle_addForceWithMouse, simulation_dimension, simulation_dimension, 1);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, UserInputShader, handle_addForce, simulation_dimension, simulation_dimension, 1);
     }
 
     public void AddDye(ComputeBuffer dye_buffer)
@@ -232,7 +232,7 @@ public class FluidSimulater
         if (!IsValid()) return;
 
         SetBufferOnCommandList(sim_command_buffer, dye_buffer, "_dye_buffer");
-        DispatchComputeOnCommandBuffer(sim_command_buffer, UserInputShader, _handle_add_dye, simulation_dimension, simulation_dimension, 1);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, UserInputShader, handle_dye, simulation_dimension, simulation_dimension, 1);
     }
 
     public void Diffuse(ComputeBuffer buffer_to_diffuse)
@@ -269,7 +269,7 @@ public class FluidSimulater
             }
 
             sim_command_buffer.SetGlobalInt("_current_iteration", i);
-            DispatchComputeOnCommandBuffer(sim_command_buffer, SolverShader, _handle_Jacobi_Solve, simulation_dimension, simulation_dimension, 1);
+            DispatchComputeOnCommandBuffer(sim_command_buffer, SolverShader, handle_Jacobi, simulation_dimension, simulation_dimension, 1);
         }
 
         if (ping_as_results)                         // The Ping ponging ended on the helper buffer ping. Copy it to the buffer_to_diffuse buffer
@@ -277,7 +277,7 @@ public class FluidSimulater
             Debug.Log("Diffuse Ended on a Ping Target, now copying over the Ping to the buffer which was supposed to be diffused");
             SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_Copy_Source");
             SetBufferOnCommandList(sim_command_buffer, buffer_to_diffuse, "_Copy_Target");
-            DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, _handle_Copy_StructuredBuffer, simulation_dimension * simulation_dimension, 1, 1);
+            DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, handle_copyBuffer, simulation_dimension * simulation_dimension, 1, 1);
         }
 
         ClearBuffer(FluidGPUResources.buffer_ping, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -295,13 +295,13 @@ public class FluidSimulater
         SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_new_advected_field");
 
 
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StokeNavierShader, _handle_advection, simulation_dimension, simulation_dimension, 1);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, StokeNavierShader, handle_advection, simulation_dimension, simulation_dimension, 1);
 
         // -------------
         SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_Copy_Source");
         SetBufferOnCommandList(sim_command_buffer, buffer_to_advect, "_Copy_Target");
 
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, _handle_Copy_StructuredBuffer, simulation_dimension * simulation_dimension, 1, 1);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, handle_copyBuffer, simulation_dimension * simulation_dimension, 1, 1);
 
         // -------------
         ClearBuffer(FluidGPUResources.buffer_ping, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -346,14 +346,14 @@ public class FluidSimulater
             }
 
             sim_command_buffer.SetGlobalInt("_current_iteration", i);
-            DispatchComputeOnCommandBuffer(sim_command_buffer, SolverShader, _handle_Jacobi_Solve, simulation_dimension, simulation_dimension, 1);
+            DispatchComputeOnCommandBuffer(sim_command_buffer, SolverShader, handle_Jacobi, simulation_dimension, simulation_dimension, 1);
         }
 
         if (ping_as_results)                         // The Ping ponging ended on the helper buffer ping. Copy it to the buffer_to_diffuse buffer
         {
             SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_Copy_Source");
             SetBufferOnCommandList(sim_command_buffer, pressure_field, "_Copy_Target");
-            DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, _handle_Copy_StructuredBuffer, simulation_dimension * simulation_dimension, 1, 1);
+            DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, handle_copyBuffer, simulation_dimension * simulation_dimension, 1, 1);
         }
 
         ClearBuffer(FluidGPUResources.buffer_ping, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -364,7 +364,7 @@ public class FluidSimulater
 
         SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_Copy_Source");
         SetBufferOnCommandList(sim_command_buffer, buffer_to_make_divergence_free, "_Copy_Target");
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, _handle_Copy_StructuredBuffer, simulation_dimension * simulation_dimension, 1, 1);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, handle_copyBuffer, simulation_dimension * simulation_dimension, 1, 1);
 
         ClearBuffer(FluidGPUResources.buffer_ping, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
         ClearBuffer(FluidGPUResources.buffer_pong, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -375,9 +375,9 @@ public class FluidSimulater
         if (!IsValid()) return;
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Dye_StructeredToTexture_Source_RBB8");
-        StructuredBufferToTextureShader.SetTexture(_handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visualizationTexture);
+        StructuredBufferToTextureShader.SetTexture(handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visualizationTexture);
 
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, _handle_dye_st2tx, canvas_dimension, canvas_dimension, 1);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, handle_dye_st2tx, canvas_dimension, canvas_dimension, 1);
 
         sim_command_buffer.Blit(visualizationTexture, BuiltinRenderTextureType.CameraTarget);
 
@@ -389,9 +389,9 @@ public class FluidSimulater
 
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Dye_StructeredToTexture_Source_RBB8");
-        StructuredBufferToTextureShader.SetTexture(_handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visualizationTexture);
+        StructuredBufferToTextureShader.SetTexture(handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visualizationTexture);
 
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, _handle_dye_st2tx, canvas_dimension, canvas_dimension, 1);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, handle_dye_st2tx, canvas_dimension, canvas_dimension, 1);
 
         sim_command_buffer.Blit(visualizationTexture, BuiltinRenderTextureType.CameraTarget, blitMat);
 
@@ -402,8 +402,8 @@ public class FluidSimulater
         if (!IsValid()) return;
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Pressure_StructeredToTexture_Source_R32");
-        StructuredBufferToTextureShader.SetTexture(_handle_pressure_st2tx, "_Pressure_StructeredToTexture_Results_R32", texture);
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, _handle_pressure_st2tx, canvas_dimension, canvas_dimension, 1);
+        StructuredBufferToTextureShader.SetTexture(handle_pressure_st2tx, "_Pressure_StructeredToTexture_Results_R32", texture);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, handle_pressure_st2tx, canvas_dimension, canvas_dimension, 1);
 
     }
 
@@ -412,8 +412,8 @@ public class FluidSimulater
         if (!IsValid()) return;
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Velocity_StructeredToTexture_Source_RB32");
-        StructuredBufferToTextureShader.SetTexture(_handle_velocity_st2tx, "_Velocity_StructeredToTexture_Results_RB32", texture);
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, _handle_velocity_st2tx, canvas_dimension, canvas_dimension, 1);
+        StructuredBufferToTextureShader.SetTexture(handle_velocity_st2tx, "_Velocity_StructeredToTexture_Results_RB32", texture);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, handle_velocity_st2tx, canvas_dimension, canvas_dimension, 1);
 
     }
 
@@ -433,7 +433,7 @@ public class FluidSimulater
 
         SetBufferOnCommandList(sim_command_buffer, field_to_calculate, "_divergence_vector_field");        // Input
         SetBufferOnCommandList(sim_command_buffer, divergnece_buffer, "_divergence_values");        // Output
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StokeNavierShader, _handle_divergence, simulation_dimension, simulation_dimension, 1);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, StokeNavierShader, handle_divergence, simulation_dimension, simulation_dimension, 1);
 
     }
 
@@ -444,14 +444,14 @@ public class FluidSimulater
         SetBufferOnCommandList(sim_command_buffer, debug_pressure_gradient, "_pressure_gradient");        // Output
         SetBufferOnCommandList(sim_command_buffer, divergence_free, "_divergence_free_field");        // Output
 
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StokeNavierShader, _handle_calculate_divergence_free, simulation_dimension, simulation_dimension, 1);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, StokeNavierShader, handle_calculateDivergence, simulation_dimension, simulation_dimension, 1);
     }
 
     private void ClearBuffer(ComputeBuffer buffer, Vector4 clear_value)
     {
         sim_command_buffer.SetGlobalVector("_Clear_Value_StructuredBuffer", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
         SetBufferOnCommandList(sim_command_buffer, buffer, "_Clear_Target_StructuredBuffer");
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, _handle_Clear_StructuredBuffer, simulation_dimension * simulation_dimension, 1, 1);
+        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, handle_clearBuffer, simulation_dimension * simulation_dimension, 1, 1);
     }
 
     private void SetFloatOnAllShaders(float toSet, string name)
