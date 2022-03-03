@@ -55,7 +55,7 @@ public class FluidSimulater
     [Header("Control Settings")]
     [Space(2)]
 
-    public KeyCode ApplyDyeKey;
+    public KeyCode dyeKey;
     public KeyCode ApplyForceKey;
 
     //___________
@@ -64,9 +64,9 @@ public class FluidSimulater
     private Camera main_cam;
 
     private CommandBuffer sim_command_buffer;
-    private RenderTexture visulasation_texture;
+    private RenderTexture visualizationTexture;
 
-    private GetMousePositionCallBack mousPosOverrider;               // If this is NULL it is assumed the calculation is happening in screen space and the screen space pos is used for input position
+    private GetMousePositionCallBack mousePosOverrider;               // If this is NULL it is assumed the calculation is happening in screen space and the screen space pos is used for input position
 
     // The handles for different kernels
     private int _handle_add_dye;
@@ -82,8 +82,8 @@ public class FluidSimulater
     private int _handle_calculate_divergence_free;
 
     // Info used for input through mouse 
-    private Vector2 mouse_previus_pos;
-    private bool mouse_previus_outofBound;
+    private Vector2 mousePreviousPos;
+    private bool mousePreviousOutOfBound;
     // ------------------------------------------------------------------
     // CONSTRUCTOR
 
@@ -98,9 +98,9 @@ public class FluidSimulater
         dye_radius = 1.0f;
         dye_falloff = 2.0f;
         velocity_dissapation = 0.999f;
-        mousPosOverrider = null;
+        mousePosOverrider = null;
 
-        ApplyDyeKey = KeyCode.Mouse0;
+        dyeKey = KeyCode.Mouse0;
         ApplyForceKey = KeyCode.Mouse1;
 
     }
@@ -116,9 +116,9 @@ public class FluidSimulater
         dye_radius = other.dye_radius;
         dye_falloff = other.dye_falloff;
         velocity_dissapation = other.velocity_dissapation;
-        mousPosOverrider = null;
+        mousePosOverrider = null;
 
-        ApplyDyeKey = KeyCode.Mouse0;
+        dyeKey = KeyCode.Mouse0;
         ApplyForceKey = KeyCode.Mouse1;
     }
 
@@ -128,7 +128,7 @@ public class FluidSimulater
 
     public void Release()             // Make sure to call this function at the end of your implementation on end play
     {
-        visulasation_texture.Release();
+        visualizationTexture.Release();
         ComputeShaderUtility.Release();
     }
     // ------------------------------------------------------------------
@@ -138,7 +138,7 @@ public class FluidSimulater
     {
 
         ComputeShaderUtility.Initialize();
-        mousPosOverrider = null;
+        mousePosOverrider = null;
 
         // -----------------------
         main_cam = Camera.main;
@@ -146,16 +146,16 @@ public class FluidSimulater
 
         // -----------------------
 
-        mouse_previus_pos = GetCurrentMouseInSimulationSpace();
+        mousePreviousPos = GetCurrentMouseInSimulationSpace();
 
         // -----------------------
-        visulasation_texture = new RenderTexture((int)canvas_dimension, (int)canvas_dimension, 0)
+        visualizationTexture = new RenderTexture((int)canvas_dimension, (int)canvas_dimension, 0)
         {
             enableRandomWrite = true,
             useMipMap = false,
         };
 
-        visulasation_texture.Create();
+        visualizationTexture.Create();
         // -----------------------
         // Setting kernel handles
 
@@ -184,7 +184,7 @@ public class FluidSimulater
         StructuredBufferToTextureShader.SetInt("_Pressure_Results_Resolution", (int)canvas_dimension);
         StructuredBufferToTextureShader.SetInt("_Velocity_Results_Resolution", (int)canvas_dimension);
         StructuredBufferToTextureShader.SetInt("_Dye_Results_Resolution", (int)canvas_dimension);
-        StructuredBufferToTextureShader.SetTexture(_handle_pressure_st2tx, "_Results", visulasation_texture);
+        StructuredBufferToTextureShader.SetTexture(_handle_pressure_st2tx, "_Results", visualizationTexture);
 
         // -----------------------
 
@@ -204,7 +204,7 @@ public class FluidSimulater
 
     public void SubmitMousePosOverrideDelegate(GetMousePositionCallBack getterFunction) // This function is called to supply the mapping between the mouse position and simulation space, you can leave it at the default if your simulation space equals your screen position
     {
-        mousPosOverrider = getterFunction;
+        mousePosOverrider = getterFunction;
     }
 
     // ------------------------------------------------------------------
@@ -375,11 +375,11 @@ public class FluidSimulater
         if (!IsValid()) return;
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Dye_StructeredToTexture_Source_RBB8");
-        StructuredBufferToTextureShader.SetTexture(_handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visulasation_texture);
+        StructuredBufferToTextureShader.SetTexture(_handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visualizationTexture);
 
         DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, _handle_dye_st2tx, canvas_dimension, canvas_dimension, 1);
 
-        sim_command_buffer.Blit(visulasation_texture, BuiltinRenderTextureType.CameraTarget);
+        sim_command_buffer.Blit(visualizationTexture, BuiltinRenderTextureType.CameraTarget);
 
     }
 
@@ -389,11 +389,11 @@ public class FluidSimulater
 
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Dye_StructeredToTexture_Source_RBB8");
-        StructuredBufferToTextureShader.SetTexture(_handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visulasation_texture);
+        StructuredBufferToTextureShader.SetTexture(_handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visualizationTexture);
 
         DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, _handle_dye_st2tx, canvas_dimension, canvas_dimension, 1);
 
-        sim_command_buffer.Blit(visulasation_texture, BuiltinRenderTextureType.CameraTarget, blitMat);
+        sim_command_buffer.Blit(visualizationTexture, BuiltinRenderTextureType.CameraTarget, blitMat);
 
     }
 
@@ -491,7 +491,7 @@ public class FluidSimulater
 
 
 
-        if (Input.GetKey(ApplyDyeKey)) mouse_pressed = 1.0f;
+        if (Input.GetKey(dyeKey)) mouse_pressed = 1.0f;
 
         UserInputShader.SetFloat("_mouse_pressed", mouse_pressed);
 
@@ -501,9 +501,9 @@ public class FluidSimulater
 
         UserInputShader.SetVector("_mouse_position", mouse_pos_struct_pos);                   // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
         UserInputShader.SetVector("_mouse_pos_current", mouse_pos_struct_pos);                   // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
-        UserInputShader.SetVector("_mouse_pos_prev", mouse_previus_pos);                      // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
+        UserInputShader.SetVector("_mouse_pos_prev", mousePreviousPos);                      // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
 
-        mouse_previus_pos = mouse_pos_struct_pos;
+        mousePreviousPos = mouse_pos_struct_pos;
     }
 
     // _______________
@@ -517,7 +517,7 @@ public class FluidSimulater
         if (UserInputShader == null) { Debug.LogError("ERROR: The Structured Buffer To Texture Compute Shader reference is not set in inspector"); return false; }
         if (StructuredBufferUtilityShader == null) { Debug.LogError("ERROR: The Structured BufferUtility Compute Shader reference is not set in inspector"); return false; }
         if (sim_command_buffer == null) { Debug.LogError("ERROR: The Fluid Simulater Object is not correctly initalized. The CommandBuffer is NULL"); return false; }
-        if (visulasation_texture == null) { Debug.LogError("ERROR: The Fluid Simulater Object is not correctly initalized. The visulasation Texture is NULL"); return false; }
+        if (visualizationTexture == null) { Debug.LogError("ERROR: The Fluid Simulater Object is not correctly initalized. The visulasation Texture is NULL"); return false; }
         if (main_cam == null) { Debug.LogError("ERROR: The Fluid Simulater Object is not correctly initalized. The camera reference is NULL"); return false; }
 
         return true;
@@ -526,7 +526,7 @@ public class FluidSimulater
 
     private Vector2 GetCurrentMouseInSimulationSpace()
     {
-        if (mousPosOverrider == null)
+        if (mousePosOverrider == null)
         {
             Vector3 mouse_pos_pixel_coord = Input.mousePosition;
             Vector2 mouse_pos_normalized = main_cam.ScreenToViewportPoint(mouse_pos_pixel_coord);
@@ -536,21 +536,21 @@ public class FluidSimulater
 
         // case there is a overrider
         bool isInBound = true;
-        Vector2 mousPosInUnitSpace = mousPosOverrider(ref isInBound);
+        Vector2 mouseUnitSpacePos = mousePosOverrider(ref isInBound);
 
 
 
         if (!isInBound)
         {
-            mouse_previus_outofBound = !isInBound;
-            return mouse_previus_pos;
+            mousePreviousOutOfBound = !isInBound;
+            return mousePreviousPos;
         }
 
-        if (mouse_previus_outofBound) mouse_previus_pos = mousPosInUnitSpace * simulation_dimension;
-        mouse_previus_outofBound = !isInBound;
+        if (mousePreviousOutOfBound) mousePreviousPos = mouseUnitSpacePos * simulation_dimension;
+        mousePreviousOutOfBound = !isInBound;
 
 
-        return mousPosInUnitSpace * simulation_dimension;
+        return mouseUnitSpacePos * simulation_dimension;
     }
 
     private void SetBufferOnCommandList(CommandBuffer cb, ComputeBuffer buffer, string buffer_name)
