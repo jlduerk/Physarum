@@ -16,14 +16,9 @@ public class FluidGPUResources
     public ComputeBuffer divergence_buffer;                        // How much divergence is in each cell. This is calculated every frame from the velocity buffer
     public ComputeBuffer pressure_buffer;                        // How much pressure is build up in each frame, calculated from velocity buffer and divergence buffer
 
-   // public ComputeBuffer boundary_velocity_offset_buffer;          // These buffers contain the per cell normals of the arbitrary bounderies
-    //public ComputeBuffer boundary_pressure_offset_buffer;          // These buffers contain the per cell normals of the arbitrary bounderies
-   // public ComputeBuffer boundary_dye_offset_buffer;          // These buffers contain the per cell normals of the arbitrary bounderies
-
     public static ComputeBuffer buffer_ping;                       // Used for solver loops, by ping ponging back and forth between these two, you can execture a loop
     public static ComputeBuffer buffer_pong;                       // Used for solver loops, by ping ponging back and forth between these two, you can execture a loop
 
-    public static RenderTexture coppier_texture;
 
     //___________
     // private
@@ -44,7 +39,7 @@ public class FluidGPUResources
         simulation_dimensions = other.simulation_dimensions;
     }
 
-    public FluidGPUResources(FluidSimulater fso)       // The actual contructor used by the code
+    public FluidGPUResources(FluidSimulation fso)       // The actual contructor used by the code
     {
         simulation_dimensions = (int)fso.simulation_dimension;
     }
@@ -60,9 +55,6 @@ public class FluidGPUResources
         pressure_buffer.Release();
         buffer_ping.Release();
         buffer_pong.Release();
-        //boundary_velocity_offset_buffer.Release();
-        //boundary_dye_offset_buffer.Release();
-       // boundary_pressure_offset_buffer.Release();
     }
 
     // ------------------------------------------------------------------
@@ -76,17 +68,6 @@ public class FluidGPUResources
         pressure_buffer = new ComputeBuffer(simulation_dimensions * simulation_dimensions, sizeof(float) * 4);
         buffer_pong = new ComputeBuffer(simulation_dimensions * simulation_dimensions, sizeof(float) * 4);
         buffer_ping = new ComputeBuffer(simulation_dimensions * simulation_dimensions, sizeof(float) * 4);
-        //boundary_velocity_offset_buffer = new ComputeBuffer(simulation_dimensions * simulation_dimensions, sizeof(float) * 4);
-        //boundary_pressure_offset_buffer = new ComputeBuffer(simulation_dimensions * simulation_dimensions, sizeof(float) * 4);
-        //boundary_dye_offset_buffer = new ComputeBuffer(simulation_dimensions * simulation_dimensions, sizeof(float) * 4);
 
     }
-
-    public static bool StaticResourcesCreated()
-    {
-
-        if (!buffer_ping.IsValid() || !buffer_pong.IsValid()) { Debug.LogError("Static Resources are still not created. Should not be accessed!"); return false; }
-        return true;
-    }
-
 }

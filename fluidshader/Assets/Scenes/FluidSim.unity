@@ -94,8 +94,9 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaDirect: 0.5
     m_PVRFilteringAtrousPositionSigmaIndirect: 2
     m_PVRFilteringAtrousPositionSigmaAO: 1
-    m_ShowResolutionOverlay: 1
     m_ExportTrainingData: 0
+    m_TrainingDataDestination: TrainingData
+    m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 1
 --- !u!196 &4
@@ -149,19 +150,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b4a376740e568343a5496826a7aedb4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fluid_simulater:
-    StokeNavierShader: {fileID: 7200000, guid: df7f4f273ead5da46a16f2b380923bf9, type: 3}
-    SolverShader: {fileID: 7200000, guid: e3454dd6b2d82234d95b1976b13b637d, type: 3}
-    BorderShader: {fileID: 7200000, guid: a9218c8a4bd1ae5469748c6ee51ade44, type: 3}
-    StructuredBufferToTextureShader: {fileID: 7200000, guid: 2696eed86d6b69546b26735658355ea6,
-      type: 3}
-    UserInputShader: {fileID: 7200000, guid: 34a77dcc698611749a10834d32f57b79, type: 3}
-    StructuredBufferUtilityShader: {fileID: 7200000, guid: 055ac4473d61fb445993e89239fc047c,
-      type: 3}
+  simulator:
+    StokeNavierShader: {fileID: 0}
+    SolverShader: {fileID: 0}
+    StructuredBufferToTextureShader: {fileID: 0}
+    UserInputShader: {fileID: 0}
+    StructuredBufferUtilityShader: {fileID: 0}
     canvas_dimension: 512
     simulation_dimension: 512
     solver_iteration_num: 120
-    grid_scale: 1
     time_step: 1
     Viscosity: 0.02
     force_strength: 1
@@ -169,8 +166,7 @@ MonoBehaviour:
     force_falloff: 1
     dye_radius: 20
     dye_falloff: 5
-    velocity_dissapation: 0.999
-    ApplyDyeKey: 323
+    dyeKey: 323
     ApplyForceKey: 324
 --- !u!4 &65463035
 Transform:

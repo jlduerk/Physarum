@@ -10,51 +10,31 @@ public enum FieldType
 
 
 [System.Serializable]
-public class FluidSimulater
+public class FluidSimulation
 {
+    [HideInInspector] public delegate Vector2 GetMousePositionCallBack(ref bool isInBound);
 
-    // ------------------------------------------------------------------
-    // TYPES
-    //___________
-    // public
+    [HideInInspector] public ComputeShader StokeNavierShader; // Contains the code for Advection, Calculating Divergence of a scalar Field and calculating the final divergence free velocity through velocity - Gradient(Pressure)      
+    [HideInInspector] public ComputeShader SolverShader; // This contains the solvers. At the moment there is only Jacobbi inside, though you can extend it as you wish
+    [HideInInspector] public ComputeShader StructuredBufferToTextureShader; // Series of utility kernels to convert structured buffers to textures
+    [HideInInspector] public ComputeShader UserInputShader; // The kernels that add user input (dye or force, through constant stream, images, mouse input etc)
+    [HideInInspector] public ComputeShader StructuredBufferUtilityShader; // Series of utility functions to do things like bilinear filtering on structured buffers
 
-    [HideInInspector]
-    public delegate Vector2 GetMousePositionCallBack(ref bool isInBound);
+    public bool usingLightSensor = false;
 
-    // ------------------------------------------------------------------
-    // VARIABLES
-    //___________
-    // public
-
-    [Header("Compute Shader Refs")]
-    [Space(2)]
-    public ComputeShader StokeNavierShader; // Contains the code for Advection, Calculating Divergence of a scalar Field and calculating the final divergence free velocity through velocity - Gradient(Pressure)      
-    public ComputeShader SolverShader; // This contains the solvers. At the moment there is only Jacobbi inside, though you can extend it as you wish
-    public ComputeShader StructuredBufferToTextureShader; // Series of utility kernels to convert structured buffers to textures
-    public ComputeShader UserInputShader; // The kernels that add user input (dye or force, through constant stream, images, mouse input etc)
-    public ComputeShader StructuredBufferUtilityShader; // Series of utility functions to do things like bilinear filtering on structured buffers
-
-    [Space(4)]
     [Header("Simulation Settings")]
-    [Space(2)]
     public uint canvas_dimension = 512;          // Resolution of the render target used at the end, this can be lower or higher than the actual simulation grid resoltion
-    public uint simulation_dimension = 256;          // Resolution of the simulation grid
-    public uint solver_iteration_num = 80;           // Number of iterations the solvers go through, increase this for more accurate simulation, and decrease for better performance
-    public float grid_scale = 1;            // The size of a grid, this is relevant for the calculations in relation to the value of velocity etc, you can and should just leave it as 1. 
-    public float time_step = 1;            // Leave this also as one unless you want to view the simulation in slow motion or speed it up. Be aware that larger time steps can lead to an in accurate simulation
-    public float Viscosity = 0.5f;         // This factor describes the fluids resistence towards motion, higher viscosity value will cause greater diffusion. You can seprate the viscosity of dye from velocity, atm both are the same
+    public uint simulation_dimension = 512;          // Resolution of the simulation grid
+    public uint solver_iteration_num = 120;           // Number of iterations the solvers go through, increase this for more accurate simulation, and decrease for better performance
+    public float Viscosity = 0.02f;         // This factor describes the fluids resistence towards motion, higher viscosity value will cause greater diffusion. You can seprate the viscosity of dye from velocity, atm both are the same
     public float force_strength = 1.0f;         // multiplyer on your mouse movement, higher number leads to strong force
-    public float force_radius = 1;            // how large the area around your mouse is which recieves the force
-    public float force_falloff = 2;            // This creates a soft brush of a sort for force application
-    public float dye_radius = 1.0f;         // Exact same  behaviour as the force one
-    public float dye_falloff = 2.0f;         // Exact same  behaviour as the force one
-    public float velocity_dissapation = 0.999f;       // How fast does the velocity dissapate, even if you leave this at one, you will still get some dissipation due to nummerical errors
-
+    public float force_radius = 10;            // how large the area around your mouse is which recieves the force
+    public float force_falloff = 1;            // This creates a soft brush of a sort for force application
+    public float dye_radius = 20.0f;         // Exact same  behaviour as the force one
+    public float dye_falloff = 5.0f;         // Exact same  behaviour as the force one
 
     [Space(4)]
     [Header("Control Settings")]
-    [Space(2)]
-
     public KeyCode dyeKey;
     public KeyCode ApplyForceKey;
 
@@ -87,17 +67,15 @@ public class FluidSimulater
     // ------------------------------------------------------------------
     // CONSTRUCTOR
 
-    public FluidSimulater()                       // Default Constructor
+    public FluidSimulation()                       // Default Constructor
     {
         canvas_dimension = 512;
-        simulation_dimension = 256;
-        solver_iteration_num = 80;
-        grid_scale = 1;
-        force_radius = 1;
-        force_falloff = 2;
-        dye_radius = 1.0f;
-        dye_falloff = 2.0f;
-        velocity_dissapation = 0.999f;
+        simulation_dimension = 512;
+        solver_iteration_num = 120;
+        force_radius = 10;
+        force_falloff = 1;
+        dye_radius = 20.0f;
+        dye_falloff = 5.0f;
         mousePosOverrider = null;
 
         dyeKey = KeyCode.Mouse0;
@@ -105,17 +83,15 @@ public class FluidSimulater
 
     }
 
-    public FluidSimulater(FluidSimulater other)   // Copy Constructor
+    public FluidSimulation(FluidSimulation other)   // Copy Constructor
     {
         canvas_dimension = other.canvas_dimension;
         simulation_dimension = other.simulation_dimension;
         solver_iteration_num = other.solver_iteration_num;
-        grid_scale = other.grid_scale;
         force_radius = other.force_radius;
         force_falloff = other.force_falloff;
         dye_radius = other.dye_radius;
         dye_falloff = other.dye_falloff;
-        velocity_dissapation = other.velocity_dissapation;
         mousePosOverrider = null;
 
         dyeKey = KeyCode.Mouse0;
@@ -195,10 +171,6 @@ public class FluidSimulater
 
         // Global Parameters that are immutable in runtime
         sim_command_buffer.SetGlobalInt("i_Resolution", (int)simulation_dimension);
-        sim_command_buffer.SetGlobalFloat("i_timeStep", time_step);
-        sim_command_buffer.SetGlobalFloat("i_grid_scale", grid_scale);
-
-
 
     }
 
@@ -222,14 +194,12 @@ public class FluidSimulater
 
     public void AddUserForce(ComputeBuffer force_buffer)
     {
-        if (!IsValid()) return;
         SetBufferOnCommandList(sim_command_buffer, force_buffer, "_user_applied_force_buffer");
         DispatchComputeOnCommandBuffer(sim_command_buffer, UserInputShader, handle_addForce, simulation_dimension, simulation_dimension, 1);
     }
 
     public void AddDye(ComputeBuffer dye_buffer)
     {
-        if (!IsValid()) return;
 
         SetBufferOnCommandList(sim_command_buffer, dye_buffer, "_dye_buffer");
         DispatchComputeOnCommandBuffer(sim_command_buffer, UserInputShader, handle_dye, simulation_dimension, simulation_dimension, 1);
@@ -237,15 +207,9 @@ public class FluidSimulater
 
     public void Diffuse(ComputeBuffer buffer_to_diffuse)
     {
-        if (!IsValid()) return;
-        if (Viscosity <= 0) return;                  // Fluid with a viscosity of zero does not diffuse
 
-        if (!FluidGPUResources.StaticResourcesCreated()) return;
-
-
-
-        float centerFactor = 1.0f / (Viscosity * time_step);
-        float reciprocal_of_diagonal = (Viscosity * time_step) / (1.0f + 4.0f * (Viscosity * time_step));
+        float centerFactor = 1.0f / Viscosity;
+        float reciprocal_of_diagonal = Viscosity / (1.0f + 4.0f * Viscosity);
 
         sim_command_buffer.SetGlobalFloat("_centerFactor", centerFactor);
         sim_command_buffer.SetGlobalFloat("_rDiagonal", reciprocal_of_diagonal);
@@ -286,7 +250,6 @@ public class FluidSimulater
 
     public void Advect(ComputeBuffer buffer_to_advect, ComputeBuffer velocity_buffer, float disspationFactor)
     {
-        if (!IsValid()) return;
 
         sim_command_buffer.SetGlobalFloat("_dissipationFactor", disspationFactor);
 
@@ -311,14 +274,12 @@ public class FluidSimulater
 
     public void Project(ComputeBuffer buffer_to_make_divergence_free, ComputeBuffer divergence_field, ComputeBuffer pressure_field)
     {
-        if (!IsValid()) return;
-        if (!FluidGPUResources.StaticResourcesCreated()) return;
 
         CalculateFieldDivergence(buffer_to_make_divergence_free, divergence_field);
 
         // ---------------
 
-        float centerFactor = -1.0f * grid_scale * grid_scale;
+        float centerFactor = -1.0f;
         float diagonalFactor = 0.25f;
 
         sim_command_buffer.SetGlobalFloat("_centerFactor", centerFactor);
@@ -369,10 +330,9 @@ public class FluidSimulater
         ClearBuffer(FluidGPUResources.buffer_ping, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
         ClearBuffer(FluidGPUResources.buffer_pong, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
     }
-  
+
     public void Visualiuse(ComputeBuffer buffer_to_visualize)
     {
-        if (!IsValid()) return;
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Dye_StructeredToTexture_Source_RBB8");
         StructuredBufferToTextureShader.SetTexture(handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visualizationTexture);
@@ -385,7 +345,6 @@ public class FluidSimulater
 
     public void Visualiuse(ComputeBuffer buffer_to_visualize, Material blitMat)
     {
-        if (!IsValid()) return;
 
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Dye_StructeredToTexture_Source_RBB8");
@@ -399,7 +358,6 @@ public class FluidSimulater
 
     public void CopyPressureBufferToTexture(RenderTexture texture, ComputeBuffer buffer_to_visualize)
     {
-        if (!IsValid()) return;
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Pressure_StructeredToTexture_Source_R32");
         StructuredBufferToTextureShader.SetTexture(handle_pressure_st2tx, "_Pressure_StructeredToTexture_Results_R32", texture);
@@ -409,7 +367,6 @@ public class FluidSimulater
 
     public void CopyVelocityBufferToTexture(RenderTexture texture, ComputeBuffer buffer_to_visualize)
     {
-        if (!IsValid()) return;
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Velocity_StructeredToTexture_Source_RB32");
         StructuredBufferToTextureShader.SetTexture(handle_velocity_st2tx, "_Velocity_StructeredToTexture_Results_RB32", texture);
@@ -420,7 +377,6 @@ public class FluidSimulater
 
     public bool BindCommandBuffer()
     {
-        if (!IsValid()) return false;
 
         main_cam.AddCommandBuffer(CameraEvent.AfterEverything, sim_command_buffer);
         return true;
@@ -470,9 +426,13 @@ public class FluidSimulater
 
         // ------------------------------------------------------------------------------
         // USER INPUT ADD DYE 
-        float randomHue = Mathf.Abs(Mathf.Sin(Time.time * 0.8f + 1.2f) + Mathf.Sin(Time.time * 0.7f + 2.0f));
-        randomHue = randomHue - Mathf.Floor(randomHue);
-        UserInputShader.SetVector("_dye_color", Color.HSVToRGB(randomHue, Mathf.Abs(Mathf.Sin(Time.time * 0.8f + 1.2f)) * 0.2f + 0.8f, Mathf.Abs(Mathf.Sin(Time.time * 0.7f + 2.0f)) * 0.2f + 0.5f));
+        float redVal = Mathf.Abs(Mathf.Sin(Time.time * 0.8f + 1.2f) + Mathf.Sin(Time.time * 0.7f + 2.0f)) / 5;
+        redVal -= Mathf.Floor(redVal); //keep value in bounds
+
+        float greenVal = Mathf.Abs(Mathf.Sin(Time.time * 0.3f + 2.0f) + Mathf.Sin(Time.time * 0.2f + 1.0f));
+        greenVal -= Mathf.Floor(greenVal); //keep value in bounds
+
+        UserInputShader.SetVector("_dye_color", new Color(redVal, greenVal, 1f));
         UserInputShader.SetFloat("_mouse_dye_radius", dye_radius);
         UserInputShader.SetFloat("_mouse_dye_falloff", dye_falloff);
 
@@ -499,29 +459,14 @@ public class FluidSimulater
 
 
 
-        UserInputShader.SetVector("_mouse_position", mouse_pos_struct_pos);                   // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
-        UserInputShader.SetVector("_mouse_pos_current", mouse_pos_struct_pos);                   // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
-        UserInputShader.SetVector("_mouse_pos_prev", mousePreviousPos);                      // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
+        UserInputShader.SetVector("_mouse_position", mouse_pos_struct_pos); // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
+        UserInputShader.SetVector("_mouse_pos_current", mouse_pos_struct_pos); // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
+        UserInputShader.SetVector("_mouse_pos_prev", mousePreviousPos); // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
 
         mousePreviousPos = mouse_pos_struct_pos;
     }
 
     // _______________
-
-
-    public bool IsValid()
-    {
-        if (StokeNavierShader == null) { Debug.LogError("ERROR: The Stoke Navier Compute Shader reference is not set in inspector"); return false; }
-        if (SolverShader == null) { Debug.LogError("ERROR: The Solver Compute Shader Shader reference is not set in inspector"); return false; }
-        if (StructuredBufferToTextureShader == null) { Debug.LogError("ERROR: The  User Input Compute Shader reference is not set in inspector"); return false; }
-        if (UserInputShader == null) { Debug.LogError("ERROR: The Structured Buffer To Texture Compute Shader reference is not set in inspector"); return false; }
-        if (StructuredBufferUtilityShader == null) { Debug.LogError("ERROR: The Structured BufferUtility Compute Shader reference is not set in inspector"); return false; }
-        if (sim_command_buffer == null) { Debug.LogError("ERROR: The Fluid Simulater Object is not correctly initalized. The CommandBuffer is NULL"); return false; }
-        if (visualizationTexture == null) { Debug.LogError("ERROR: The Fluid Simulater Object is not correctly initalized. The visulasation Texture is NULL"); return false; }
-        if (main_cam == null) { Debug.LogError("ERROR: The Fluid Simulater Object is not correctly initalized. The camera reference is NULL"); return false; }
-
-        return true;
-    }
 
 
     private Vector2 GetCurrentMouseInSimulationSpace()
