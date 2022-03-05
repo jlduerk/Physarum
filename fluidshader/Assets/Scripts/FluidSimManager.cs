@@ -10,7 +10,7 @@ public class FluidSimManager : MonoBehaviour
 
     void Start()
     {
-        // Init
+        //initializing the simulation
         simulator.StokeNavierShader = (ComputeShader)Resources.Load("NavierStokes");
         simulator.SolverShader = (ComputeShader)Resources.Load("Solvers");
         simulator.StructuredBufferToTextureShader = (ComputeShader)Resources.Load("StructuredbufferToTexture");
@@ -18,7 +18,7 @@ public class FluidSimManager : MonoBehaviour
         simulator.StructuredBufferUtilityShader = (ComputeShader)Resources.Load("StructuredBufferUtility");
         simulator.Initialize();
         
-
+        //creating all the buffers :,)
         resources = new FluidGPUResources(simulator);
         resources.Create();
 
@@ -37,17 +37,13 @@ public class FluidSimManager : MonoBehaviour
 
         simulator.BindCommandBuffer();
     }
-
-    // ------------------------------------------------------------------
-    // DESTRUCTOR
+    
     void OnDisable()
     {
         simulator.Release();
         resources.Release();
     }
 
-    // ------------------------------------------------------------------
-    // LOOP
     void Update()
     {
         simulator.Tick(Time.deltaTime);

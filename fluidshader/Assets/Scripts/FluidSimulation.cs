@@ -12,12 +12,12 @@ public enum FieldType
 [System.Serializable]
 public class FluidSimulation
 {
-
-    [HideInInspector] public ComputeShader StokeNavierShader; // Contains the code for Advection, Calculating Divergence of a scalar Field and calculating the final divergence free velocity through velocity - Gradient(Pressure)      
-    [HideInInspector] public ComputeShader SolverShader; // This contains the solvers. At the moment there is only Jacobbi inside, though you can extend it as you wish
-    [HideInInspector] public ComputeShader StructuredBufferToTextureShader; // Series of utility kernels to convert structured buffers to textures
-    [HideInInspector] public ComputeShader UserInputShader; // The kernels that add user input (dye or force, through constant stream, images, mouse input etc)
-    [HideInInspector] public ComputeShader StructuredBufferUtilityShader; // Series of utility functions to do things like bilinear filtering on structured buffers
+    
+    [HideInInspector] public ComputeShader StokeNavierShader;    //advection code, and divergence calcs through velocity and pressure
+    [HideInInspector] public ComputeShader SolverShader;    //Jacobi solver (can be added to in future work)
+    [HideInInspector] public ComputeShader StructuredBufferToTextureShader;    //utility kernels for buffer -> texture
+    [HideInInspector] public ComputeShader UserInputShader;     //User input kernels
+    [HideInInspector] public ComputeShader StructuredBufferUtilityShader;   //utility kernels for filters etc.
 
     [Header("Light Sensor Attributes")]
     public ReadSensor lightSensor;
