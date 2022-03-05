@@ -416,7 +416,8 @@ public class FluidSimulation
         if (usingLightSensor)
         {
             UserInputShader.SetVector("_dye_color", new Color(redVal * lightSensor.lightSensorVal, greenVal * lightSensor.lightSensorVal, 1f * lightSensor.lightSensorVal));
-        } else
+        }
+        else
         {
             UserInputShader.SetVector("_dye_color", new Color(redVal, greenVal, 1f));
         }
@@ -476,4 +477,3 @@ public class FluidSimulation
         cb.DispatchCompute(toDispatch, kernel, (int)group_nums.dispatch_x, (int)group_nums.dispatch_y, (int)group_nums.dispatch_z);
     }
 }
-
