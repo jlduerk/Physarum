@@ -12,7 +12,6 @@ public enum FieldType
 [System.Serializable]
 public class FluidSimulation
 {
-    [HideInInspector] public delegate Vector2 GetMousePositionCallBack(ref bool isInBound);
 
     [HideInInspector] public ComputeShader StokeNavierShader; // Contains the code for Advection, Calculating Divergence of a scalar Field and calculating the final divergence free velocity through velocity - Gradient(Pressure)      
     [HideInInspector] public ComputeShader SolverShader; // This contains the solvers. At the moment there is only Jacobbi inside, though you can extend it as you wish
@@ -20,23 +19,23 @@ public class FluidSimulation
     [HideInInspector] public ComputeShader UserInputShader; // The kernels that add user input (dye or force, through constant stream, images, mouse input etc)
     [HideInInspector] public ComputeShader StructuredBufferUtilityShader; // Series of utility functions to do things like bilinear filtering on structured buffers
 
+    [Header("Light Sensor Attributes")]
+    public ReadSensor lightSensor;
     public bool usingLightSensor = false;
 
-    [Header("Simulation Settings")]
+    [Header("Simulation Attributes")]
     public uint canvas_dimension = 512;          // Resolution of the render target used at the end, this can be lower or higher than the actual simulation grid resoltion
     public uint simulation_dimension = 512;          // Resolution of the simulation grid
     public uint solver_iteration_num = 120;           // Number of iterations the solvers go through, increase this for more accurate simulation, and decrease for better performance
-    public float Viscosity = 0.02f;         // This factor describes the fluids resistence towards motion, higher viscosity value will cause greater diffusion. You can seprate the viscosity of dye from velocity, atm both are the same
+    public float viscosity = 0.02f;         // This factor describes the fluids resistence towards motion, higher viscosity value will cause greater diffusion. You can seprate the viscosity of dye from velocity, atm both are the same
     public float force_strength = 1.0f;         // multiplyer on your mouse movement, higher number leads to strong force
     public float force_radius = 10;            // how large the area around your mouse is which recieves the force
     public float force_falloff = 1;            // This creates a soft brush of a sort for force application
     public float dye_radius = 20.0f;         // Exact same  behaviour as the force one
     public float dye_falloff = 5.0f;         // Exact same  behaviour as the force one
 
-    [Space(4)]
-    [Header("Control Settings")]
-    public KeyCode dyeKey;
-    public KeyCode ApplyForceKey;
+    [HideInInspector] public KeyCode dyeKey;
+    [HideInInspector] public KeyCode forceKey;
 
     //___________
     // private
@@ -45,8 +44,6 @@ public class FluidSimulation
 
     private CommandBuffer sim_command_buffer;
     private RenderTexture visualizationTexture;
-
-    private GetMousePositionCallBack mousePosOverrider;               // If this is NULL it is assumed the calculation is happening in screen space and the screen space pos is used for input position
 
     // The handles for different kernels
     private int handle_dye;
@@ -76,10 +73,9 @@ public class FluidSimulation
         force_falloff = 1;
         dye_radius = 20.0f;
         dye_falloff = 5.0f;
-        mousePosOverrider = null;
 
         dyeKey = KeyCode.Mouse0;
-        ApplyForceKey = KeyCode.Mouse1;
+        forceKey = KeyCode.Mouse1;
 
     }
 
@@ -92,10 +88,9 @@ public class FluidSimulation
         force_falloff = other.force_falloff;
         dye_radius = other.dye_radius;
         dye_falloff = other.dye_falloff;
-        mousePosOverrider = null;
 
         dyeKey = KeyCode.Mouse0;
-        ApplyForceKey = KeyCode.Mouse1;
+        forceKey = KeyCode.Mouse1;
     }
 
     // ------------------------------------------------------------------
@@ -114,17 +109,13 @@ public class FluidSimulation
     {
 
         ComputeShaderUtility.Initialize();
-        mousePosOverrider = null;
 
-        // -----------------------
         main_cam = Camera.main;
         if (main_cam == null) Debug.LogError("Could not find main camera, make sure the camera is tagged as main");
 
-        // -----------------------
 
         mousePreviousPos = GetCurrentMouseInSimulationSpace();
 
-        // -----------------------
         visualizationTexture = new RenderTexture((int)canvas_dimension, (int)canvas_dimension, 0)
         {
             enableRandomWrite = true,
@@ -148,12 +139,8 @@ public class FluidSimulation
         handle_calculateDivergence = ComputeShaderUtility.GetKernelHandle(StokeNavierShader, "calculate_divergence_free");
 
 
-
-        // -----------------------
         // Initialize Kernel Parameters, buffers our bound by the actual shader dispatch functions
 
-
-        // __
 
         UpdateRuntimeKernelParameters();
 
@@ -174,15 +161,8 @@ public class FluidSimulation
 
     }
 
-    public void SubmitMousePosOverrideDelegate(GetMousePositionCallBack getterFunction) // This function is called to supply the mapping between the mouse position and simulation space, you can leave it at the default if your simulation space equals your screen position
-    {
-        mousePosOverrider = getterFunction;
-    }
-
-    // ------------------------------------------------------------------
-    // LOOP
-
-    public void Tick(float deltaTime)                                                  // should be called at same rate you wish to update your simulation, usually once a frame in update
+    // Update
+    public void Tick(float deltaTime)  // should be called at same rate you wish to update your simulation, usually once a frame in update
     {
         UpdateRuntimeKernelParameters();
     }
@@ -208,8 +188,8 @@ public class FluidSimulation
     public void Diffuse(ComputeBuffer buffer_to_diffuse)
     {
 
-        float centerFactor = 1.0f / Viscosity;
-        float reciprocal_of_diagonal = Viscosity / (1.0f + 4.0f * Viscosity);
+        float centerFactor = 1.0f / viscosity;
+        float reciprocal_of_diagonal = viscosity / (1.0f + 4.0f * viscosity);
 
         sim_command_buffer.SetGlobalFloat("_centerFactor", centerFactor);
         sim_command_buffer.SetGlobalFloat("_rDiagonal", reciprocal_of_diagonal);
@@ -219,7 +199,7 @@ public class FluidSimulation
         for (int i = 0; i < solver_iteration_num; i++)
         {
             ping_as_results = !ping_as_results;
-            if (ping_as_results)                     // Ping ponging back and forth to insure no racing condition. 
+            if (ping_as_results) // Ping ponging back and forth to insure no racing condition. 
             {
                 SetBufferOnCommandList(sim_command_buffer, buffer_to_diffuse, "_b_buffer");
                 SetBufferOnCommandList(sim_command_buffer, buffer_to_diffuse, "_updated_x_buffer");
@@ -236,7 +216,7 @@ public class FluidSimulation
             DispatchComputeOnCommandBuffer(sim_command_buffer, SolverShader, handle_Jacobi, simulation_dimension, simulation_dimension, 1);
         }
 
-        if (ping_as_results)                         // The Ping ponging ended on the helper buffer ping. Copy it to the buffer_to_diffuse buffer
+        if (ping_as_results) // The Ping ponging ended on the helper buffer ping. Copy it to the buffer_to_diffuse buffer
         {
             Debug.Log("Diffuse Ended on a Ping Target, now copying over the Ping to the buffer which was supposed to be diffused");
             SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_Copy_Source");
@@ -331,7 +311,7 @@ public class FluidSimulation
         ClearBuffer(FluidGPUResources.buffer_pong, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
     }
 
-    public void Visualiuse(ComputeBuffer buffer_to_visualize)
+    public void Visualize(ComputeBuffer buffer_to_visualize)
     {
 
         SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Dye_StructeredToTexture_Source_RBB8");
@@ -424,15 +404,23 @@ public class FluidSimulation
 
         SetFloatOnAllShaders(Time.time, "i_Time");
 
-        // ------------------------------------------------------------------------------
-        // USER INPUT ADD DYE 
+        // DYE FLUID
+
         float redVal = Mathf.Abs(Mathf.Sin(Time.time * 0.8f + 1.2f) + Mathf.Sin(Time.time * 0.7f + 2.0f)) / 5;
         redVal -= Mathf.Floor(redVal); //keep value in bounds
 
         float greenVal = Mathf.Abs(Mathf.Sin(Time.time * 0.3f + 2.0f) + Mathf.Sin(Time.time * 0.2f + 1.0f));
         greenVal -= Mathf.Floor(greenVal); //keep value in bounds
 
-        UserInputShader.SetVector("_dye_color", new Color(redVal, greenVal, 1f));
+        // Use light sensor
+        if (usingLightSensor)
+        {
+            UserInputShader.SetVector("_dye_color", new Color(redVal * lightSensor.lightSensorVal, greenVal * lightSensor.lightSensorVal, 1f * lightSensor.lightSensorVal));
+        } else
+        {
+            UserInputShader.SetVector("_dye_color", new Color(redVal, greenVal, 1f));
+        }
+
         UserInputShader.SetFloat("_mouse_dye_radius", dye_radius);
         UserInputShader.SetFloat("_mouse_dye_falloff", dye_falloff);
 
@@ -440,7 +428,7 @@ public class FluidSimulation
 
         float forceController = 0;
 
-        if (Input.GetKey(ApplyForceKey)) forceController = force_strength;
+        if (Input.GetKey(forceKey)) forceController = force_strength;
 
         UserInputShader.SetFloat("_force_multiplier", forceController);
         UserInputShader.SetFloat("_force_effect_radius", force_radius);
@@ -471,31 +459,10 @@ public class FluidSimulation
 
     private Vector2 GetCurrentMouseInSimulationSpace()
     {
-        if (mousePosOverrider == null)
-        {
-            Vector3 mouse_pos_pixel_coord = Input.mousePosition;
-            Vector2 mouse_pos_normalized = main_cam.ScreenToViewportPoint(mouse_pos_pixel_coord);
-            mouse_pos_normalized = new Vector2(Mathf.Clamp01(mouse_pos_normalized.x), Mathf.Clamp01(mouse_pos_normalized.y));
-            return new Vector2(mouse_pos_normalized.x * simulation_dimension, mouse_pos_normalized.y * simulation_dimension);
-        }
-
-        // case there is a overrider
-        bool isInBound = true;
-        Vector2 mouseUnitSpacePos = mousePosOverrider(ref isInBound);
-
-
-
-        if (!isInBound)
-        {
-            mousePreviousOutOfBound = !isInBound;
-            return mousePreviousPos;
-        }
-
-        if (mousePreviousOutOfBound) mousePreviousPos = mouseUnitSpacePos * simulation_dimension;
-        mousePreviousOutOfBound = !isInBound;
-
-
-        return mouseUnitSpacePos * simulation_dimension;
+        Vector3 mouse_pos_pixel_coord = Input.mousePosition;
+        Vector2 mouse_pos_normalized = main_cam.ScreenToViewportPoint(mouse_pos_pixel_coord);
+        mouse_pos_normalized = new Vector2(Mathf.Clamp01(mouse_pos_normalized.x), Mathf.Clamp01(mouse_pos_normalized.y));
+        return new Vector2(mouse_pos_normalized.x * simulation_dimension, mouse_pos_normalized.y * simulation_dimension);
     }
 
     private void SetBufferOnCommandList(CommandBuffer cb, ComputeBuffer buffer, string buffer_name)

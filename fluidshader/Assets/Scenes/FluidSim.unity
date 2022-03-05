@@ -131,6 +131,7 @@ GameObject:
   m_Component:
   - component: {fileID: 65463035}
   - component: {fileID: 65463034}
+  - component: {fileID: 65463036}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -156,18 +157,19 @@ MonoBehaviour:
     StructuredBufferToTextureShader: {fileID: 0}
     UserInputShader: {fileID: 0}
     StructuredBufferUtilityShader: {fileID: 0}
+    lightSensor: {fileID: 65463036}
+    usingLightSensor: 0
     canvas_dimension: 512
     simulation_dimension: 512
     solver_iteration_num: 120
-    time_step: 1
-    Viscosity: 0.02
+    viscosity: 0.02
     force_strength: 1
     force_radius: 10
     force_falloff: 1
     dye_radius: 20
     dye_falloff: 5
     dyeKey: 323
-    ApplyForceKey: 324
+    forceKey: 324
 --- !u!4 &65463035
 Transform:
   m_ObjectHideFlags: 0
@@ -182,6 +184,19 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &65463036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 65463033}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d16dfb5902dade4a9ad7cbfc1937f29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lightSensorVal: 0
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
