@@ -116,9 +116,9 @@ public class FluidSimulation
         //setting handles
 
         handle_dye = ComputeShaderUtility.GetKernelHandle(UserInputShader, "AddDye");
-        handle_pressure_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "PressureStructeredToTextureBillinearR32");
-        handle_velocity_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "VelocityStructeredToTextureBillinearRG32");
-        handle_dye_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "DyeStructeredToTextureBillinearRGB8");
+        handle_pressure_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "PressureStructuredToTextureBillinearR32");
+        handle_velocity_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "VelocityStructuredToTextureBillinearRG32");
+        handle_dye_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "DyeStructuredToTextureBillinearRGB8");
         handle_copyBuffer = ComputeShaderUtility.GetKernelHandle(StructuredBufferUtilityShader, "Copy_StructuredBuffer");
         handle_Jacobi = ComputeShaderUtility.GetKernelHandle(SolverShader, "Jacobi_Solve");
         handle_clearBuffer = ComputeShaderUtility.GetKernelHandle(StructuredBufferUtilityShader, "Clear_StructuredBuffer");
