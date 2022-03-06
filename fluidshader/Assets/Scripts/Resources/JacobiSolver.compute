@@ -4,26 +4,26 @@
 
 //kerney
 
-#pragma kernel Jacobi_Solve
+#pragma kernel Jacobi_Solver
 
 
 //declarations
 
-StructuredBuffer<float4>     _b_buffer;    //b constant in equatiosns
+StructuredBuffer<float4>     _b_buffer;    // b constant in equatiosns
 StructuredBuffer<float4>     _updated_x_buffer;    // k-1 jacobi, x iin our equation
-RWStructuredBuffer<float4>   _results;    //swaps with updated later
+RWStructuredBuffer<float4>   _results;    // swaps with updated later
 
-int                          _current_iteration;   //debug 
-float                        _rDiagonal;     //jacobi diag 
-float                        _centerFactor; //coefficient of b
+int                          _current_iteration;   // debug 
+float                        _rDiagonal;     // jacobi diag 
+float                        _centerFactor; // coefficient of b
 
 
 #include "FluidDynamicUtility.cginc"
 
 
-//iterative method for solving for x in Ax = b
-[numthreads(16, 16, 1)]                            //runs once for every equation variable that needs solving
-void Jacobi_Solve(uint3 id : SV_DispatchThreadID)
+// iterative method for solving for x in Ax = b
+[numthreads(16, 16, 1)] // runs once for every equation variable that needs solving
+void Jacobi_Solver(uint3 id : SV_DispatchThreadID)
 {
 
 	int2  coordinate = id.xy;

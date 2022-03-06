@@ -12,26 +12,26 @@ public enum FieldType
 [System.Serializable]
 public class FluidSimulation
 {
-    
-    [HideInInspector] public ComputeShader StokeNavierShader;    //advection code, and divergence calcs through velocity and pressure
-    [HideInInspector] public ComputeShader SolverShader;    //Jacobi solver (can be added to in future work)
-    [HideInInspector] public ComputeShader StructuredBufferToTextureShader;    //utility kernels for buffer -> texture
-    [HideInInspector] public ComputeShader UserInputShader;     //User input kernels
-    [HideInInspector] public ComputeShader StructuredBufferUtilityShader;   //utility kernels for filters etc.
+
+    [HideInInspector] public ComputeShader StokeNavierShader; // advection code, and divergence calcs through velocity and pressure
+    [HideInInspector] public ComputeShader SolverShader; // Jacobi solver 
+    [HideInInspector] public ComputeShader StructuredBufferToTextureShader;  // utility kernels for buffer -> texture
+    [HideInInspector] public ComputeShader UserInputShader;  // User input kernels
+    [HideInInspector] public ComputeShader StructuredBufferUtilityShader; // utility kernels for filters etc.
 
     [Header("Light Sensor Attributes")]
     public ReadSensor lightSensor;
     public bool usingLightSensor = false;
 
     [Header("Simulation Attributes")]
-    public uint canvas_dimension = 512;       
+    public uint canvas_dimension = 512;
     public uint simulation_dimension = 512;
-    public uint solver_iteration_num = 120;     //number of iterations the solvers go through more accurate at higher iterations
-    public float viscosity = 0.02f;     //higher viscosity causes greater diffusion
-    public float force_strength = 1.0f;  //multiplies with mouse
-    public float force_radius = 15;    //mouse stroke radius
-    public float force_falloff = 1;     //for soft round brush
-    public float dye_radius = 30.0f; 
+    public uint solver_iteration_num = 120; // number of iterations the solvers go through more accurate at higher iterations
+    public float viscosity = 0.02f; // higher viscosity causes greater diffusion
+    public float force_strength = 1.0f; // multiplies with mouse
+    public float force_radius = 15; // mouse stroke radius
+    public float force_falloff = 1; // for soft round brush
+    public float dye_radius = 30.0f;
     public float dye_falloff = 5.0f;
 
     [HideInInspector] public KeyCode dyeKey;
@@ -48,16 +48,15 @@ public class FluidSimulation
     private int handle_velocity_st2tx;
     private int handle_dye_st2tx;
     private int handle_Jacobi;
-    private int handle_copyBuffer; //structured buffer
-    private int handle_clearBuffer; //also structured
-    private int handle_addForce; //with mouse
+    private int handle_copyBuffer; // structured buffer
+    private int handle_clearBuffer; // structured buffer
+    private int handle_addForce; 
     private int handle_advection;
     private int handle_divergence;
     private int handle_calculateDivergence;
 
     // Info used for input through mouse 
     private Vector2 mousePreviousPos;
-    private bool mousePreviousOutOfBound;
 
     public FluidSimulation()  //default constructor
     {
@@ -120,7 +119,7 @@ public class FluidSimulation
         handle_velocity_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "VelocityStructuredToTextureBillinearRG32");
         handle_dye_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "DyeStructuredToTextureBillinearRGB8");
         handle_copyBuffer = ComputeShaderUtility.GetKernelHandle(StructuredBufferUtilityShader, "Copy_StructuredBuffer");
-        handle_Jacobi = ComputeShaderUtility.GetKernelHandle(SolverShader, "Jacobi_Solve");
+        handle_Jacobi = ComputeShaderUtility.GetKernelHandle(SolverShader, "Jacobi_Solver");
         handle_clearBuffer = ComputeShaderUtility.GetKernelHandle(StructuredBufferUtilityShader, "Clear_StructuredBuffer");
         handle_addForce = ComputeShaderUtility.GetKernelHandle(UserInputShader, "AddForce_mouse");
         handle_advection = ComputeShaderUtility.GetKernelHandle(StokeNavierShader, "advection");
@@ -223,13 +222,13 @@ public class FluidSimulation
 
         DispatchComputeOnCommandBuffer(sim_command_buffer, StokeNavierShader, handle_advection, simulation_dimension, simulation_dimension, 1);
 
-        
+
         SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_Copy_Source");
         SetBufferOnCommandList(sim_command_buffer, buffer_to_advect, "_Copy_Target");
 
         DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, handle_copyBuffer, simulation_dimension * simulation_dimension, 1, 1);
 
-        
+
         ClearBuffer(FluidGPUResources.buffer_ping, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
 
 
@@ -303,18 +302,6 @@ public class FluidSimulation
 
     }
 
-    public void Visualiuse(ComputeBuffer buffer_to_visualize, Material blitMat)
-    {
-
-
-        SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Dye_StructeredToTexture_Source_RBB8");
-        StructuredBufferToTextureShader.SetTexture(handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visualizationTexture);
-
-        DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, handle_dye_st2tx, canvas_dimension, canvas_dimension, 1);
-
-        sim_command_buffer.Blit(visualizationTexture, BuiltinRenderTextureType.CameraTarget, blitMat);
-
-    }
 
     public void CopyPressureBufferToTexture(RenderTexture texture, ComputeBuffer buffer_to_visualize)
     {
@@ -429,8 +416,8 @@ public class FluidSimulation
 
         //pass mouse pos as 2d coord
         UserInputShader.SetVector("_mouse_position", mouse_pos_struct_pos);
-        UserInputShader.SetVector("_mouse_pos_current", mouse_pos_struct_pos); 
-        UserInputShader.SetVector("_mouse_pos_prev", mousePreviousPos); 
+        UserInputShader.SetVector("_mouse_pos_current", mouse_pos_struct_pos);
+        UserInputShader.SetVector("_mouse_pos_prev", mousePreviousPos);
 
         mousePreviousPos = mouse_pos_struct_pos;
     }

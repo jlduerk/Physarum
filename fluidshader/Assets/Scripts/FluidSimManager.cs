@@ -12,8 +12,8 @@ public class FluidSimManager : MonoBehaviour
     {
         //initializing the simulation
         simulator.StokeNavierShader = (ComputeShader)Resources.Load("NavierStokes");
-        simulator.SolverShader = (ComputeShader)Resources.Load("Solvers");
-        simulator.StructuredBufferToTextureShader = (ComputeShader)Resources.Load("StructuredbufferToTexture");
+        simulator.SolverShader = (ComputeShader)Resources.Load("JacobiSolver");
+        simulator.StructuredBufferToTextureShader = (ComputeShader)Resources.Load("StructuredBufferToTexture");
         simulator.UserInputShader = (ComputeShader)Resources.Load("UserInput");
         simulator.StructuredBufferUtilityShader = (ComputeShader)Resources.Load("StructuredBufferUtility");
         simulator.Initialize();

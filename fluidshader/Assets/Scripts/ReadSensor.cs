@@ -11,20 +11,18 @@ public class ReadSensor : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        stream.Open(); //Open the Serial Stream.
+        stream.Open(); // Open the Serial Stream.
     }
 
     // Update is called once per frame
     void Update()
     {
-        string value = stream.ReadLine(); //Read the information
+        string value = stream.ReadLine(); // Read the information
+        stream.ReadTimeout = 105; // Helps with lag
         lightSensorVal = (float)int.Parse(value);
         lightSensorVal -= 200;
         if (lightSensorVal < 0) lightSensorVal = 0;
         lightSensorVal /= 600;
         if (lightSensorVal > 1) lightSensorVal = 1;
-
-
-        //Debug.Log(lightSensorVal);
     }
 }

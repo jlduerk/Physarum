@@ -12,14 +12,14 @@ RWTexture2D<float4>        _Pressure_StructeredToTexture_Results_R32;
 int                        _Pressure_Results_Resolution;
 
 
-//builds a structured buffere on top of a render texture for visualization
-[numthreads(16,16,1)]
+//builds a structured buffer on top of a render texture for visualization
+[numthreads(16, 16, 1)]
 void PressureStructuredToTextureBillinearR32(uint3 id : SV_DispatchThreadID)
 {
-    float2 coord  = (float2)id.xy / (float)(_Pressure_Results_Resolution -1 ); //first normalizes the thread IDs based on the targets resolution
-           coord *= (float) (u_Resolution-1);     //remapping as 2d IDs
+	float2 coord = (float2)id.xy / (float)(_Pressure_Results_Resolution - 1); //first normalizes the thread IDs based on the targets resolution
+	coord *= (float)(u_Resolution - 1);     //remapping as 2d IDs
 
-           _Pressure_StructeredToTexture_Results_R32[id.xy] = StructuredBufferBilinearLoad(_Pressure_StructeredToTexture_Source_R32, coord);
+	_Pressure_StructeredToTexture_Results_R32[id.xy] = StructuredBufferBilinearLoad(_Pressure_StructeredToTexture_Source_R32, coord);
 
 }
 
@@ -32,10 +32,10 @@ int                        _Velocity_Results_Resolution;
 [numthreads(16, 16, 1)]
 void VelocityStructuredToTextureBillinearRG32(uint3 id : SV_DispatchThreadID)
 {
-    float2 coord = (float2)id.xy / (float)(_Velocity_Results_Resolution - 1);   
-    coord *= (float)(u_Resolution - 1);                                         
+	float2 coord = (float2)id.xy / (float)(_Velocity_Results_Resolution - 1);
+	coord *= (float)(u_Resolution - 1);
 
-    _Velocity_StructeredToTexture_Results_RB32[id.xy] = StructuredBufferBilinearLoad(_Velocity_StructeredToTexture_Source_RB32, coord);
+	_Velocity_StructeredToTexture_Results_RB32[id.xy] = StructuredBufferBilinearLoad(_Velocity_StructeredToTexture_Source_RB32, coord);
 
 }
 
@@ -49,9 +49,9 @@ int                        _Dye_Results_Resolution;
 [numthreads(16, 16, 1)]
 void DyeStructuredToTextureBillinearRGB8(uint3 id : SV_DispatchThreadID)
 {
-    float2 coord = (float2)id.xy / (float)(_Dye_Results_Resolution - 1);       
-    coord *= (float)(u_Resolution - 1);                                          
+	float2 coord = (float2)id.xy / (float)(_Dye_Results_Resolution - 1);
+	coord *= (float)(u_Resolution - 1);
 
-    _Dye_StructeredToTexture_Results_RBB8[id.xy] = StructuredBufferBilinearLoad(_Dye_StructeredToTexture_Source_RBB8, coord);
+	_Dye_StructeredToTexture_Results_RBB8[id.xy] = StructuredBufferBilinearLoad(_Dye_StructeredToTexture_Source_RBB8, coord);
 
 }

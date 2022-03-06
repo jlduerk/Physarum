@@ -158,10 +158,10 @@ MonoBehaviour:
     UserInputShader: {fileID: 0}
     StructuredBufferUtilityShader: {fileID: 0}
     lightSensor: {fileID: 65463036}
-    usingLightSensor: 0
+    usingLightSensor: 1
     canvas_dimension: 512
     simulation_dimension: 512
-    solver_iteration_num: 120
+    solver_iteration_num: 80
     viscosity: 0.02
     force_strength: 1
     force_radius: 10
@@ -191,12 +191,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 65463033}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2d16dfb5902dade4a9ad7cbfc1937f29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   lightSensorVal: 0
+  sensorDelay: 30
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
