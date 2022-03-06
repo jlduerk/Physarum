@@ -30,9 +30,9 @@ public class FluidSimulation
     public uint solverIterations = 80; // number of iterations the solvers go through more accurate at higher iterations
     public float dyeRadius = 30.0f;
     public float dyeFalloff = 5.0f;
-    public float forceStrength = 1.0f; 
-    public float forceRadius = 15; 
-    public float forceFalloff = 1; 
+    public float forceStrength = 1.0f;
+    public float forceRadius = 15;
+    public float forceFalloff = 1;
 
     [HideInInspector] public KeyCode dyeKey;
     [HideInInspector] public KeyCode forceKey;
@@ -115,9 +115,9 @@ public class FluidSimulation
         //setting handles
 
         handle_dye = ComputeShaderUtility.GetKernelHandle(UserInputShader, "AddDye");
-        handle_pressure_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "PressureStructuredToTextureBillinearR32");
-        handle_velocity_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "VelocityStructuredToTextureBillinearRG32");
-        handle_dye_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "DyeStructuredToTextureBillinearRGB8");
+        handle_pressure_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "PressureStructuredToTexture");
+        handle_velocity_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "VelocityStructuredToTexture");
+        handle_dye_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "DyeStructuredToTexture");
         handle_copyBuffer = ComputeShaderUtility.GetKernelHandle(StructuredBufferUtilityShader, "Copy_StructuredBuffer");
         handle_Jacobi = ComputeShaderUtility.GetKernelHandle(SolverShader, "Jacobi_Solver");
         handle_clearBuffer = ComputeShaderUtility.GetKernelHandle(StructuredBufferUtilityShader, "Clear_StructuredBuffer");
@@ -130,8 +130,8 @@ public class FluidSimulation
         //initialize kernel and bind buffers
         UpdateRuntimeKernelParameters();
 
-        StructuredBufferToTextureShader.SetInt("_Pressure_Results_Resolution", (int)canvasDimension);
-        StructuredBufferToTextureShader.SetInt("_Velocity_Results_Resolution", (int)canvasDimension);
+        StructuredBufferToTextureShader.SetInt("Pressure_Results_Resolution", (int)canvasDimension);
+        StructuredBufferToTextureShader.SetInt("Velocity_Results_Resolution", (int)canvasDimension);
         StructuredBufferToTextureShader.SetInt("_Dye_Results_Resolution", (int)canvasDimension);
         StructuredBufferToTextureShader.SetTexture(handle_pressure_st2tx, "_Results", visualizationTexture);
 
@@ -293,8 +293,8 @@ public class FluidSimulation
     public void Visualize(ComputeBuffer buffer_to_visualize)
     {
 
-        SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Dye_StructeredToTexture_Source_RBB8");
-        StructuredBufferToTextureShader.SetTexture(handle_dye_st2tx, "_Dye_StructeredToTexture_Results_RBB8", visualizationTexture);
+        SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "Dye_StructuredToTexture_Source");
+        StructuredBufferToTextureShader.SetTexture(handle_dye_st2tx, "Dye_StructuredToTexture_Results", visualizationTexture);
 
         DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, handle_dye_st2tx, canvasDimension, canvasDimension, 1);
 
@@ -306,8 +306,8 @@ public class FluidSimulation
     public void CopyPressureBufferToTexture(RenderTexture texture, ComputeBuffer buffer_to_visualize)
     {
 
-        SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Pressure_StructeredToTexture_Source_R32");
-        StructuredBufferToTextureShader.SetTexture(handle_pressure_st2tx, "_Pressure_StructeredToTexture_Results_R32", texture);
+        SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "Pressure_StructuredToTexture_Source");
+        StructuredBufferToTextureShader.SetTexture(handle_pressure_st2tx, "Pressure_StructuredToTexture_Results", texture);
         DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, handle_pressure_st2tx, canvasDimension, canvasDimension, 1);
 
     }
@@ -315,8 +315,8 @@ public class FluidSimulation
     public void CopyVelocityBufferToTexture(RenderTexture texture, ComputeBuffer buffer_to_visualize)
     {
 
-        SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "_Velocity_StructeredToTexture_Source_RB32");
-        StructuredBufferToTextureShader.SetTexture(handle_velocity_st2tx, "_Velocity_StructeredToTexture_Results_RB32", texture);
+        SetBufferOnCommandList(sim_command_buffer, buffer_to_visualize, "Velocity_StructuredToTexture_Source");
+        StructuredBufferToTextureShader.SetTexture(handle_velocity_st2tx, "Velocity_StructuredToTexture_Results", texture);
         DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferToTextureShader, handle_velocity_st2tx, canvasDimension, canvasDimension, 1);
 
     }

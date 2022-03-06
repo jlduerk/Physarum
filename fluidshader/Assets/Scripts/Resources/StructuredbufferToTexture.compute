@@ -1,57 +1,57 @@
 ﻿
 //kernels
-#pragma kernel PressureStructuredToTextureBillinearR32
-#pragma kernel VelocityStructuredToTextureBillinearRG32
-#pragma kernel DyeStructuredToTextureBillinearRGB8
+#pragma kernel PressureStructuredToTexture
+#pragma kernel VelocityStructuredToTexture
+#pragma kernel DyeStructuredToTexture
 
 #include "FluidDynamicUtility.cginc"
 
 //declarations
-StructuredBuffer<float4>   _Pressure_StructeredToTexture_Source_R32;
-RWTexture2D<float4>        _Pressure_StructeredToTexture_Results_R32;
-int                        _Pressure_Results_Resolution;
+StructuredBuffer<float4>   Pressure_StructuredToTexture_Source;
+RWTexture2D<float4>        Pressure_StructuredToTexture_Results;
+int                        Pressure_Results_Resolution;
 
 
 //builds a structured buffer on top of a render texture for visualization
 [numthreads(16, 16, 1)]
-void PressureStructuredToTextureBillinearR32(uint3 id : SV_DispatchThreadID)
+void PressureStructuredToTexture(uint3 id : SV_DispatchThreadID)
 {
-	float2 coord = (float2)id.xy / (float)(_Pressure_Results_Resolution - 1); //first normalizes the thread IDs based on the targets resolution
+	float2 coord = (float2)id.xy / (float)(Pressure_Results_Resolution - 1); //first normalizes the thread IDs based on the targets resolution
 	coord *= (float)(u_Resolution - 1);     //remapping as 2d IDs
 
-	_Pressure_StructeredToTexture_Results_R32[id.xy] = StructuredBufferBilinearLoad(_Pressure_StructeredToTexture_Source_R32, coord);
+	Pressure_StructuredToTexture_Results[id.xy] = StructuredBufferBilinearLoad(Pressure_StructuredToTexture_Source, coord);
 
 }
 
 //declarations
-StructuredBuffer<float4>   _Velocity_StructeredToTexture_Source_RB32;
-RWTexture2D<float4>        _Velocity_StructeredToTexture_Results_RB32;
-int                        _Velocity_Results_Resolution;
+StructuredBuffer<float4>   Velocity_StructuredToTexture_Source;
+RWTexture2D<float4>        Velocity_StructuredToTexture_Results;
+int                        Velocity_Results_Resolution;
 
 //builds structured buffer for velocity
 [numthreads(16, 16, 1)]
-void VelocityStructuredToTextureBillinearRG32(uint3 id : SV_DispatchThreadID)
+void VelocityStructuredToTexture(uint3 id : SV_DispatchThreadID)
 {
-	float2 coord = (float2)id.xy / (float)(_Velocity_Results_Resolution - 1);
+	float2 coord = (float2)id.xy / (float)(Velocity_Results_Resolution - 1);
 	coord *= (float)(u_Resolution - 1);
 
-	_Velocity_StructeredToTexture_Results_RB32[id.xy] = StructuredBufferBilinearLoad(_Velocity_StructeredToTexture_Source_RB32, coord);
+	Velocity_StructuredToTexture_Results[id.xy] = StructuredBufferBilinearLoad(Velocity_StructuredToTexture_Source, coord);
 
 }
 
 //declarations
-StructuredBuffer<float4>   _Dye_StructeredToTexture_Source_RBB8;
-RWTexture2D<float4>        _Dye_StructeredToTexture_Results_RBB8;
+StructuredBuffer<float4>   Dye_StructuredToTexture_Source;
+RWTexture2D<float4>        Dye_StructuredToTexture_Results;
 int                        _Dye_Results_Resolution;
 
 
 //builds structured buffer for dye
 [numthreads(16, 16, 1)]
-void DyeStructuredToTextureBillinearRGB8(uint3 id : SV_DispatchThreadID)
+void DyeStructuredToTexture(uint3 id : SV_DispatchThreadID)
 {
 	float2 coord = (float2)id.xy / (float)(_Dye_Results_Resolution - 1);
 	coord *= (float)(u_Resolution - 1);
 
-	_Dye_StructeredToTexture_Results_RBB8[id.xy] = StructuredBufferBilinearLoad(_Dye_StructeredToTexture_Source_RBB8, coord);
+	Dye_StructuredToTexture_Results[id.xy] = StructuredBufferBilinearLoad(Dye_StructuredToTexture_Source, coord);
 
 }

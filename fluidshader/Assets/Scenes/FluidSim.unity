@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.37311953, g: 0.38074014, b: 0.3587274, a: 1}
+  m_IndirectSpecularColor: {r: 0.37311918, g: 0.3807398, b: 0.35872716, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -158,7 +158,7 @@ MonoBehaviour:
     UserInputShader: {fileID: 0}
     StructuredBufferUtilityShader: {fileID: 0}
     lightSensor: {fileID: 65463036}
-    usingLightSensor: 1
+    usingLightSensor: 0
     canvasDimension: 512
     simDimension: 512
     viscosity: 0.02
@@ -191,7 +191,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 65463033}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2d16dfb5902dade4a9ad7cbfc1937f29, type: 3}
   m_Name: 

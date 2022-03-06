@@ -30,7 +30,7 @@ public class FluidSimManager : MonoBehaviour
         simulator.AddDye(resources.dye_buffer);
         simulator.Advect(resources.dye_buffer, resources.velocity_buffer, 0.992f);
         simulator.Diffuse(resources.dye_buffer);
-        simulator.Visualize(resources.dye_buffer);
+        //simulator.Visualize(resources.dye_buffer);
 
         simulator.BindCommandBuffer();
     }
