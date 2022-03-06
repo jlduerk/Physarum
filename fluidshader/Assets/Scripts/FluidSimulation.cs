@@ -50,7 +50,7 @@ public class FluidSimulation
     private int handle_Jacobi;
     private int handle_copyBuffer; // structured buffer
     private int handle_clearBuffer; // structured buffer
-    private int handle_addForce; 
+    private int handle_addForce;
     private int handle_advection;
     private int handle_divergence;
     private int handle_calculateDivergence;
