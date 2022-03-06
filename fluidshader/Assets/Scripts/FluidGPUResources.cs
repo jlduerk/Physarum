@@ -23,7 +23,7 @@ public class FluidGPUResources
 
     public FluidGPUResources(FluidSimulation fso)    // real constructor
     {
-        simulation_dimensions = (int)fso.simulation_dimension;
+        simulation_dimensions = (int)fso.simDimension;
     }
 
     public void Release()  //destructor

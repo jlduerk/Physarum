@@ -133,7 +133,7 @@ GameObject:
   - component: {fileID: 65463034}
   - component: {fileID: 65463036}
   m_Layer: 0
-  m_Name: Manager
+  m_Name: FluidSim
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -159,15 +159,15 @@ MonoBehaviour:
     StructuredBufferUtilityShader: {fileID: 0}
     lightSensor: {fileID: 65463036}
     usingLightSensor: 1
-    canvas_dimension: 512
-    simulation_dimension: 512
-    solver_iteration_num: 80
+    canvasDimension: 512
+    simDimension: 512
     viscosity: 0.02
-    force_strength: 1
-    force_radius: 10
-    force_falloff: 1
-    dye_radius: 20
-    dye_falloff: 5
+    solverIterations: 120
+    dyeRadius: 10
+    dyeFalloff: 5
+    forceStrength: 1
+    forceRadius: 10
+    forceFalloff: 1
     dyeKey: 323
     forceKey: 324
 --- !u!4 &65463035
@@ -197,7 +197,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lightSensorVal: 0
-  sensorDelay: 30
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0

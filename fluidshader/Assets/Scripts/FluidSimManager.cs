@@ -18,7 +18,7 @@ public class FluidSimManager : MonoBehaviour
         simulator.StructuredBufferUtilityShader = (ComputeShader)Resources.Load("StructuredBufferUtility");
         simulator.Initialize();
         
-        //creating all the buffers :,)
+        //creating all the buffers :')
         resources = new FluidGPUResources(simulator);
         resources.Create();
 
@@ -27,12 +27,9 @@ public class FluidSimManager : MonoBehaviour
         simulator.Project(resources.velocity_buffer, resources.divergence_buffer, resources.pressure_buffer);
         simulator.Advect(resources.velocity_buffer, resources.velocity_buffer, 1.0f);
         simulator.Project(resources.velocity_buffer, resources.divergence_buffer, resources.pressure_buffer);
-
-
         simulator.AddDye(resources.dye_buffer);
         simulator.Advect(resources.dye_buffer, resources.velocity_buffer, 0.992f);
         simulator.Diffuse(resources.dye_buffer);
-
         simulator.Visualize(resources.dye_buffer);
 
         simulator.BindCommandBuffer();
