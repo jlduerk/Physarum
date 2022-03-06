@@ -1,7 +1,7 @@
 #ifndef __FLUID_DYNAMIC_LIB__
 #define __FLUID_DYNAMIC_LIB__
 
-int   i_Resolution;
+int   u_Resolution;
 float i_grid_scale;
 float i_timeStep;
 float i_Time;
@@ -12,7 +12,7 @@ float i_Time;
 
 // Globals that need to be defined before this include is added, these are in FluidDynamicCommonUniforms
 
-// uint i_Resolution
+// uint u_Resolution
 
 //----------------------------------------------------------------------------
 // Macro            : id2Dto1D
@@ -20,7 +20,7 @@ float i_Time;
 //----------------------------------------------------------------------------
 
 int id2Dto1D(int2 m_coord) {
-    return clamp(m_coord.x, 0, i_Resolution - 1 ) + clamp(m_coord.y, 0, i_Resolution - 1 ) * i_Resolution;
+    return clamp(m_coord.x, 0, u_Resolution - 1 ) + clamp(m_coord.y, 0, u_Resolution - 1 ) * u_Resolution;
 }
 
 

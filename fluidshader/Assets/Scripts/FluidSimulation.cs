@@ -24,21 +24,18 @@ public class FluidSimulation
     public bool usingLightSensor = false;
 
     [Header("Simulation Attributes")]
-    public uint canvas_dimension = 512;          // Resolution of the render target used at the end, this can be lower or higher than the actual simulation grid resoltion
-    public uint simulation_dimension = 512;          // Resolution of the simulation grid
-    public uint solver_iteration_num = 120;           // Number of iterations the solvers go through, increase this for more accurate simulation, and decrease for better performance
-    public float viscosity = 0.02f;         // This factor describes the fluids resistence towards motion, higher viscosity value will cause greater diffusion. You can seprate the viscosity of dye from velocity, atm both are the same
-    public float force_strength = 1.0f;         // multiplyer on your mouse movement, higher number leads to strong force
-    public float force_radius = 10;            // how large the area around your mouse is which recieves the force
-    public float force_falloff = 1;            // This creates a soft brush of a sort for force application
-    public float dye_radius = 20.0f;         // Exact same  behaviour as the force one
-    public float dye_falloff = 5.0f;         // Exact same  behaviour as the force one
+    public uint canvas_dimension = 512;       
+    public uint simulation_dimension = 512;
+    public uint solver_iteration_num = 120;     //number of iterations the solvers go through more accurate at higher iterations
+    public float viscosity = 0.02f;     //higher viscosity causes greater diffusion
+    public float force_strength = 1.0f;  //multiplies with mouse
+    public float force_radius = 15;    //mouse stroke radius
+    public float force_falloff = 1;     //for soft round brush
+    public float dye_radius = 30.0f; 
+    public float dye_falloff = 5.0f;
 
     [HideInInspector] public KeyCode dyeKey;
     [HideInInspector] public KeyCode forceKey;
-
-    //___________
-    // private
 
     private Camera main_cam;
 
@@ -61,10 +58,8 @@ public class FluidSimulation
     // Info used for input through mouse 
     private Vector2 mousePreviousPos;
     private bool mousePreviousOutOfBound;
-    // ------------------------------------------------------------------
-    // CONSTRUCTOR
 
-    public FluidSimulation()                       // Default Constructor
+    public FluidSimulation()  //default constructor
     {
         canvas_dimension = 512;
         simulation_dimension = 512;
@@ -79,7 +74,7 @@ public class FluidSimulation
 
     }
 
-    public FluidSimulation(FluidSimulation other)   // Copy Constructor
+    public FluidSimulation(FluidSimulation other)   //copy from other
     {
         canvas_dimension = other.canvas_dimension;
         simulation_dimension = other.simulation_dimension;
@@ -93,21 +88,15 @@ public class FluidSimulation
         forceKey = KeyCode.Mouse1;
     }
 
-    // ------------------------------------------------------------------
-    // DESTRUCTOR
 
-
-    public void Release()             // Make sure to call this function at the end of your implementation on end play
+    public void Release()  //ends play
     {
         visualizationTexture.Release();
         ComputeShaderUtility.Release();
     }
-    // ------------------------------------------------------------------
-    // INITALISATION
 
-    public void Initialize()          // This function needs to be called before you start using the fluid engine
+    public void Initialize()   //initializes fluidsim
     {
-
         ComputeShaderUtility.Initialize();
 
         main_cam = Camera.main;
@@ -123,8 +112,8 @@ public class FluidSimulation
         };
 
         visualizationTexture.Create();
-        // -----------------------
-        // Setting kernel handles
+
+        //setting handles
 
         handle_dye = ComputeShaderUtility.GetKernelHandle(UserInputShader, "AddDye");
         handle_pressure_st2tx = ComputeShaderUtility.GetKernelHandle(StructuredBufferToTextureShader, "PressureStructeredToTextureBillinearR32");
@@ -139,9 +128,7 @@ public class FluidSimulation
         handle_calculateDivergence = ComputeShaderUtility.GetKernelHandle(StokeNavierShader, "calculate_divergence_free");
 
 
-        // Initialize Kernel Parameters, buffers our bound by the actual shader dispatch functions
-
-
+        //initialize kernel and bind buffers
         UpdateRuntimeKernelParameters();
 
         StructuredBufferToTextureShader.SetInt("_Pressure_Results_Resolution", (int)canvas_dimension);
@@ -149,15 +136,12 @@ public class FluidSimulation
         StructuredBufferToTextureShader.SetInt("_Dye_Results_Resolution", (int)canvas_dimension);
         StructuredBufferToTextureShader.SetTexture(handle_pressure_st2tx, "_Results", visualizationTexture);
 
-        // -----------------------
-
         sim_command_buffer = new CommandBuffer()
         {
             name = "Simulation_Command_Buffer",
         };
 
-        // Global Parameters that are immutable in runtime
-        sim_command_buffer.SetGlobalInt("i_Resolution", (int)simulation_dimension);
+        sim_command_buffer.SetGlobalInt("u_Resolution", (int)simulation_dimension);
 
     }
 
@@ -169,8 +153,7 @@ public class FluidSimulation
 
 
 
-    // ------------------------------------------------------------------
-    // SIMULATION STEPS
+    //simulation functions run after user uses mousse
 
     public void AddUserForce(ComputeBuffer force_buffer)
     {
@@ -199,7 +182,7 @@ public class FluidSimulation
         for (int i = 0; i < solver_iteration_num; i++)
         {
             ping_as_results = !ping_as_results;
-            if (ping_as_results) // Ping ponging back and forth to insure no racing condition. 
+            if (ping_as_results) //going back and forth
             {
                 SetBufferOnCommandList(sim_command_buffer, buffer_to_diffuse, "_b_buffer");
                 SetBufferOnCommandList(sim_command_buffer, buffer_to_diffuse, "_updated_x_buffer");
@@ -216,7 +199,7 @@ public class FluidSimulation
             DispatchComputeOnCommandBuffer(sim_command_buffer, SolverShader, handle_Jacobi, simulation_dimension, simulation_dimension, 1);
         }
 
-        if (ping_as_results) // The Ping ponging ended on the helper buffer ping. Copy it to the buffer_to_diffuse buffer
+        if (ping_as_results) //copy helper buffer to diffuse buffer
         {
             Debug.Log("Diffuse Ended on a Ping Target, now copying over the Ping to the buffer which was supposed to be diffused");
             SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_Copy_Source");
@@ -240,13 +223,13 @@ public class FluidSimulation
 
         DispatchComputeOnCommandBuffer(sim_command_buffer, StokeNavierShader, handle_advection, simulation_dimension, simulation_dimension, 1);
 
-        // -------------
+        
         SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_Copy_Source");
         SetBufferOnCommandList(sim_command_buffer, buffer_to_advect, "_Copy_Target");
 
         DispatchComputeOnCommandBuffer(sim_command_buffer, StructuredBufferUtilityShader, handle_copyBuffer, simulation_dimension * simulation_dimension, 1, 1);
 
-        // -------------
+        
         ClearBuffer(FluidGPUResources.buffer_ping, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
 
 
@@ -257,7 +240,6 @@ public class FluidSimulation
 
         CalculateFieldDivergence(buffer_to_make_divergence_free, divergence_field);
 
-        // ---------------
 
         float centerFactor = -1.0f;
         float diagonalFactor = 0.25f;
@@ -275,7 +257,7 @@ public class FluidSimulation
         for (int i = 0; i < solver_iteration_num; i++)
         {
             ping_as_results = !ping_as_results;
-            if (ping_as_results)                     // Ping ponging back and forth to insure no racing condition. 
+            if (ping_as_results)
             {
                 SetBufferOnCommandList(sim_command_buffer, pressure_field, "_updated_x_buffer");
                 SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_results");
@@ -290,7 +272,7 @@ public class FluidSimulation
             DispatchComputeOnCommandBuffer(sim_command_buffer, SolverShader, handle_Jacobi, simulation_dimension, simulation_dimension, 1);
         }
 
-        if (ping_as_results)                         // The Ping ponging ended on the helper buffer ping. Copy it to the buffer_to_diffuse buffer
+        if (ping_as_results)
         {
             SetBufferOnCommandList(sim_command_buffer, FluidGPUResources.buffer_ping, "_Copy_Source");
             SetBufferOnCommandList(sim_command_buffer, pressure_field, "_Copy_Target");
@@ -298,8 +280,6 @@ public class FluidSimulation
         }
 
         ClearBuffer(FluidGPUResources.buffer_ping, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-
-        // ---------------
 
         CalculateDivergenceFreeFromPressureField(buffer_to_make_divergence_free, pressure_field, FluidGPUResources.buffer_pong, FluidGPUResources.buffer_ping);
 
@@ -361,8 +341,8 @@ public class FluidSimulation
         main_cam.AddCommandBuffer(CameraEvent.AfterEverything, sim_command_buffer);
         return true;
     }
-    // ------------------------------------------------------------------
-    // HELPER FUNCTIONS
+
+    //helper functions below
 
     private void CalculateFieldDivergence(ComputeBuffer field_to_calculate, ComputeBuffer divergnece_buffer)
     {
@@ -404,7 +384,7 @@ public class FluidSimulation
 
         SetFloatOnAllShaders(Time.time, "i_Time");
 
-        // DYE FLUID
+        //dye fluid
 
         float redVal = Mathf.Abs(Mathf.Sin(Time.time * 0.8f + 1.2f) + Mathf.Sin(Time.time * 0.7f + 2.0f)) / 5;
         redVal -= Mathf.Floor(redVal); //keep value in bounds
@@ -425,7 +405,7 @@ public class FluidSimulation
         UserInputShader.SetFloat("_mouse_dye_radius", dye_radius);
         UserInputShader.SetFloat("_mouse_dye_falloff", dye_falloff);
 
-        // USER INPUT ADD FORCE WITH MOUSE
+        //mouse input
 
         float forceController = 0;
 
@@ -447,15 +427,13 @@ public class FluidSimulation
         Vector2 mouse_pos_struct_pos = GetCurrentMouseInSimulationSpace();
 
 
-
-        UserInputShader.SetVector("_mouse_position", mouse_pos_struct_pos); // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
-        UserInputShader.SetVector("_mouse_pos_current", mouse_pos_struct_pos); // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
-        UserInputShader.SetVector("_mouse_pos_prev", mousePreviousPos); // Pass on the mouse position already in the coordinate system of the structured buffer as 2D coord
+        //pass mouse pos as 2d coord
+        UserInputShader.SetVector("_mouse_position", mouse_pos_struct_pos);
+        UserInputShader.SetVector("_mouse_pos_current", mouse_pos_struct_pos); 
+        UserInputShader.SetVector("_mouse_pos_prev", mousePreviousPos); 
 
         mousePreviousPos = mouse_pos_struct_pos;
     }
-
-    // _______________
 
 
     private Vector2 GetCurrentMouseInSimulationSpace()
